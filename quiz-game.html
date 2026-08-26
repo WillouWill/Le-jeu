@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Le Jeu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#1a1440; --bg-2:#4a2a8f;
+    --ink:#241a4d; --ink-2:#3a2a6b;
+    --pink:#ff5d8f; --pink-dark:#e8447a;
+    --yellow:#ffc93c; --yellow-dark:#f0ad1e;
+    --teal:#2dd4bf; --teal-dark:#1fae9c;
+    --orange:#ff8c42; --orange-dark:#f06f1f;
+    --cream:#fff9f2; --panel:#ffffff;
+    --ok:#2bb673; --bad:#ef476f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Nunito',sans-serif;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(255,93,143,0.35), transparent 45%),
+      radial-gradient(circle at 100% 20%, rgba(45,212,191,0.25), transparent 40%),
+      linear-gradient(160deg, var(--bg-1), var(--bg-2) 120%);
+    background-attachment:fixed;
+    color:var(--cream); min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  .screen{max-width:520px;margin:0 auto;padding:22px 16px 40px;min-height:100vh;}
+  h1.title{
+    font-family:'Baloo 2',sans-serif;
+    font-size:1.7rem;font-weight:800;text-align:center;
+    margin:4px 0 2px;color:var(--yellow);
+    text-shadow:0 3px 0 rgba(0,0,0,0.25);
+    letter-spacing:0.01em;
+  }
+  .subtitle{text-align:center;font-size:0.88rem;color:#d8d0f5;margin-bottom:20px;font-weight:600;}
+  .card{
+    background:var(--panel);color:var(--ink);border-radius:20px;padding:18px;margin-bottom:14px;
+    box-shadow:0 10px 0 rgba(0,0,0,0.18), 0 14px 26px rgba(0,0,0,0.28);
+    border-top:5px solid var(--teal);
+    animation:pop-in .35s ease both;
+  }
+  .card h2{
+    font-family:'Baloo 2',sans-serif;font-size:1.05rem;margin:0 0 10px;color:var(--ink);
+    border:none;padding-bottom:0;font-weight:700;
+  }
+  @keyframes pop-in{from{opacity:0;transform:translateY(6px) scale(0.98);}to{opacity:1;transform:none;}}
+  @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-5px);}}
+  @keyframes wiggle{0%,100%{transform:rotate(0deg);}25%{transform:rotate(-6deg);}75%{transform:rotate(6deg);}}
+
+  label{display:block;font-size:0.82rem;margin:10px 0 4px;color:#4a4470;font-weight:800;}
+  input[type=text]{width:100%;padding:12px 14px;border-radius:14px;border:2px solid #e4def7;font-size:1rem;font-family:inherit;font-weight:600;background:#faf8ff;}
+  input[type=text]:focus{outline:none;border-color:var(--pink);}
+
+  .btn{
+    display:block;width:100%;padding:14px;border:none;border-radius:16px;
+    font-family:'Baloo 2',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.01em;
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:none !important;}
+  .btn-gold{background:var(--pink);color:#fff;box-shadow:0 5px 0 var(--pink-dark);}
+  .btn-outline{background:#fff;color:var(--ink);border:2px solid var(--ink-2);box-shadow:0 5px 0 #cfc8ea;}
+  .btn-small{padding:10px;font-size:0.85rem;border-radius:12px;}
+  .btn[disabled]{opacity:0.4;cursor:not-allowed;}
+
+  .file-drop{border:2px dashed #cfc8ea;border-radius:14px;padding:14px;text-align:center;font-size:0.82rem;color:#6a6390;margin-top:8px;}
+  .file-drop input{margin-top:8px;}
+  .hint{font-size:0.76rem;color:#8a84ab;margin-top:4px;font-weight:600;}
+
+  .profile-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .profile-chip{padding:10px 16px;border-radius:20px;border:2px solid var(--teal);background:#eafffb;color:var(--teal-dark);font-weight:800;font-size:0.85rem;cursor:pointer;transition:transform .08s ease;}
+  .profile-chip:active{transform:scale(0.95);}
+  .profile-chip.selected{background:var(--teal);color:#fff;}
+
+  .board-wrap{overflow-x:auto;padding:46px 4px 22px;margin-bottom:6px;}
+  .board{display:flex;gap:10px;min-width:max-content;padding:4px 10px;align-items:flex-end;}
+  .square{
+    width:44px;height:44px;border-radius:50%;flex-shrink:0;position:relative;
+    display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;
+    box-shadow:0 4px 0 rgba(0,0,0,0.22);
+    font-family:'Baloo 2',sans-serif;
+  }
+  .square.fixed{background:var(--teal);}
+  .square.free{background:var(--orange);}
+  .square.current{box-shadow:0 4px 0 rgba(0,0,0,0.22), 0 0 0 4px var(--yellow);}
+  .token{position:absolute;top:-30px;font-size:1.3rem;left:50%;transform:translateX(-50%);animation:bob 1s ease-in-out infinite;}
+
+  .theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .theme-btn{padding:12px 8px;border-radius:14px;border:2px solid #e4def7;background:#faf8ff;color:var(--ink);font-weight:800;font-size:0.85rem;text-align:center;cursor:pointer;transition:transform .08s ease;}
+  .theme-btn:active{transform:scale(0.96);}
+  .theme-btn .count{display:block;font-size:0.68rem;font-weight:700;color:#8a84ab;margin-top:2px;}
+  .theme-btn[disabled]{opacity:0.3;}
+  .theme-btn.selected-theme{background:var(--pink);color:#fff;border-color:var(--pink-dark);}
+
+  .question-box{
+    background:var(--ink);color:var(--cream);border-radius:22px;padding:20px;margin-bottom:14px;
+    box-shadow:0 10px 0 rgba(0,0,0,0.25), 0 14px 26px rgba(0,0,0,0.3);
+  }
+  .question-box .theme-tag{
+    display:inline-block;background:var(--yellow);color:var(--ink);font-size:0.72rem;
+    padding:5px 14px;border-radius:20px;font-weight:800;margin-bottom:12px;font-family:'Baloo 2',sans-serif;
+  }
+  .question-box .theme-tag.personal{background:var(--pink);color:#fff;}
+  .question-text{font-size:1.1rem;line-height:1.45;margin-bottom:16px;font-weight:700;}
+  .answers{display:flex;flex-direction:column;gap:10px;}
+  .answer-btn{
+    text-align:left;padding:13px 16px;border-radius:14px;border:none;
+    background:#372a6b;color:var(--cream);font-size:0.95rem;font-weight:700;cursor:pointer;
+    box-shadow:0 4px 0 #241a4d;transition:transform .08s ease;
+  }
+  .answer-btn:active{transform:translateY(3px);box-shadow:none;}
+  .answer-btn.correct{background:var(--ok);box-shadow:0 4px 0 #1e8a58;}
+  .answer-btn.wrong{background:var(--bad);box-shadow:0 4px 0 #c22f56;}
+  .answer-btn.eliminated{opacity:0.25;pointer-events:none;}
+  .answer-btn:disabled{pointer-events:none;}
+  .answer-btn.revealed{box-shadow:0 0 0 3px var(--yellow), 0 4px 0 #241a4d;}
+
+  .jokers-divider{display:flex;align-items:center;gap:10px;margin-top:18px;color:var(--yellow);}
+  .jokers-divider::before,.jokers-divider::after{content:"";flex:1;height:2px;background:rgba(255,255,255,0.15);}
+  .jokers-divider span{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.03em;text-transform:uppercase;}
+  .jokers{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .joker-btn{
+    padding:10px 4px;border-radius:14px;border:none;background:rgba(255,255,255,0.1);color:var(--yellow);
+    font-size:0.7rem;font-weight:800;text-align:center;cursor:pointer;line-height:1.25;
+    font-family:'Baloo 2',sans-serif;transition:transform .08s ease, background .15s ease;
+  }
+  .joker-btn:active{transform:scale(0.94);background:rgba(255,255,255,0.2);}
+  .joker-btn[disabled]{opacity:0.25;pointer-events:none;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,10,50,0.7);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-box{background:var(--panel);color:var(--ink);border-radius:22px;padding:26px;text-align:center;max-width:360px;box-shadow:0 16px 0 rgba(0,0,0,0.2);}
+  .modal-box p{font-family:'Baloo 2',sans-serif;font-size:1.2rem;font-weight:700;margin:0 0 18px;}
+
+  .daily-info{border-top-color:var(--pink);}
+  .daily-info img{max-width:100%;border-radius:14px;margin-top:8px;}
+  .daily-info audio{width:100%;margin-top:8px;}
+  .daily-info a{color:var(--pink-dark);font-weight:800;}
+
+  .feedback{text-align:center;font-weight:800;margin:12px 0;font-size:1.05rem;font-family:'Baloo 2',sans-serif;}
+  .explication-box{background:rgba(255,255,255,0.08);border-left:4px solid var(--yellow);border-radius:10px;padding:12px 14px;font-size:0.88rem;line-height:1.4;margin:-2px 0 6px;font-weight:600;}
+  .feedback.ok{color:#7fe9b8;}
+  .feedback.bad{color:#ff9fb6;}
+  .empty-state{text-align:center;color:#8a84ab;font-size:0.85rem;padding:20px 0;font-weight:600;}
+
+  .stat-row{display:flex;gap:10px;}
+  .stat-row .card{flex:1;text-align:center;padding:14px;border-top-color:var(--pink);}
+  .stat-row .num{font-family:'Baloo 2',sans-serif;font-size:1.5rem;font-weight:800;color:var(--ink);}
+  .stat-row .lbl{font-size:0.7rem;color:#8a84ab;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;}
+</style>
+</head>
+<body>
+<div id="app" class="screen"></div>
+
+<script>
+/* ---------- Source des questions : fichier questions.json dans le même dépôt GitHub ---------- */
+// Pour ajouter/modifier des questions : édite directement questions.json sur GitHub (même
+// interface que pour uploader ce fichier), sans jamais toucher à ce code.
+const QUESTIONS_URL = "./questions.json";
+
+// Repli utilisé uniquement si questions.json est introuvable (mauvais chemin, fichier manquant, etc.)
+const FALLBACK_THEME_QUESTIONS = {
+  "Histoire": [
+    {id:1, question:"En quelle année a eu lieu la Révolution française ?", a:"1789", b:"1799", c:"1804", d:"1815", correct:"A", indice:"Fin du XVIIIe siècle"},
+  ],
+  "Cinéma": [
+    {id:1, question:"Qui a réalisé le film 'Pulp Fiction' ?", a:"Martin Scorsese", b:"Quentin Tarantino", c:"David Fincher", d:"Ridley Scott", correct:"B", indice:""},
+  ]
+};
+const NEW_PLAYER_SHEET = "Nouveau joueur";
+const TRACK_LENGTH = 30;
+const DEVICE_PROFILE_KEY = "lejeu_device_profile";
+const JOKER_LABELS = {
+  bonneReponse: "✅ Bonne réponse",
+  fifty: "50/50",
+  ami: "📞 Ami",
+  sacrifice10: "⏪ Sacrifice 10",
+  sacrifice20: "⏪⏪ Sacrifice 20",
+  nouvelleQuestion: "🔄 Nouvelle question",
+  nouveauTheme: "🔀 Nouveau thème",
+  choisirTheme: "🎯 Choisis un thème",
+  questionMoi: "🙋 Question Moi"
+};
+
+function defaultJokers(){
+  return {bonneReponse:true, fifty:true, ami:true, sacrifice10:true, sacrifice20:true, nouvelleQuestion:true, nouveauTheme:true, choisirTheme:true, questionMoi:true};
+}
+
+/* ---------- Stockage local (progression sauvegardée sur cet appareil) ---------- */
+function safeGet(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
+function safeSet(key, val){ try{ localStorage.setItem(key, val); }catch(e){} }
+
+// Les jokers se réinitialisent chaque jour à 6h heure de Paris.
+// On calcule une "clé de période" (date du jour côté Paris, décalée si on est avant 6h)
+// et on compare cette clé à celle enregistrée pour savoir s'il faut réinitialiser.
+function parisNowParts(){
+  const fmt = new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Paris', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', hour12:false});
+  const map = {};
+  fmt.formatToParts(new Date()).forEach(p=>{ if(p.type!=='literal') map[p.type]=p.value; });
+  return {date: `${map.year}-${map.month}-${map.day}`, hour: parseInt(map.hour,10)||0};
+}
+function currentResetPeriodKey(){
+  const {date, hour} = parisNowParts();
+  if(hour < 6){
+    const d = new Date(date+"T00:00:00Z");
+    d.setUTCDate(d.getUTCDate()-1);
+    return d.toISOString().slice(0,10);
+  }
+  return date;
+}
+
+function saveProgress(){
+  if(!state.playerName) return;
+  const usedKeys = [];
+  Object.keys(state.themeQuestions).forEach(t=> state.themeQuestions[t].forEach(q=>{ if(q.used) usedKeys.push('t:'+t+':'+q.id); }));
+  Object.keys(state.playerQuestions).forEach(p=> state.playerQuestions[p].forEach(q=>{ if(q.used) usedKeys.push('p:'+p+':'+q.id); }));
+  const blob = {
+    pos: state.pos, score: state.score, jokers: state.jokers, jokerResetKey: state.jokerResetKey,
+    assignedThemes: state.assignedThemes, personalQuestionsKey: state.personalQuestionsKey,
+    ageCategory: state.ageCategory,
+    usedKeys: usedKeys
+  };
+  safeSet('lejeu_save_'+state.playerName, JSON.stringify(blob));
+}
+
+function restoreProfile(name){
+  state.playerName = name;
+  state.profileLocked = true;
+  let blob = null;
+  try{ blob = JSON.parse(safeGet('lejeu_save_'+name)); }catch(e){}
+  const periodKey = currentResetPeriodKey();
+  if(blob){
+    state.pos = blob.pos || 0;
+    state.score = blob.score || 0;
+    state.assignedThemes = blob.assignedThemes || null;
+    state.personalQuestionsKey = blob.personalQuestionsKey || name;
+    state.ageCategory = blob.ageCategory || 'adulte';
+    state.jokers = blob.jokers || defaultJokers();
+    state.jokerResetKey = blob.jokerResetKey || periodKey;
+    (blob.usedKeys||[]).forEach(key=>{
+      const parts = key.split(':');
+      const kind = parts[0], poolName = parts[1], id = parts[2];
+      const arr = kind==='t' ? state.themeQuestions[poolName] : state.playerQuestions[poolName];
+      if(arr){
+        const q = arr.find(q=>String(q.id)===String(id));
+        if(q) q.used = true;
+      }
+    });
+  } else {
+    state.pos = 0;
+    state.score = 0;
+    state.assignedThemes = null;
+    state.personalQuestionsKey = name;
+    state.ageCategory = 'adulte';
+    state.jokers = defaultJokers();
+    state.jokerResetKey = periodKey;
+  }
+  if(state.jokerResetKey !== periodKey){
+    state.jokers = defaultJokers();
+    state.jokerResetKey = periodKey;
+  }
+  saveProgress();
+}
+
+let state = {
+  screen: "loading",
+  loadError: null,
+  loadErrorDetail: null,
+  playerName: "",
+  personalQuestionsKey: null,
+  profileLocked: false,
+  assignedThemes: null,
+  ageCategory: null,
+  pendingAge: null,
+  pendingChipProfile: null,
+  pendingNewName: "",
+  selectedThemes: [],
+  knownProfiles: [],
+  themeQuestions: {},
+  playerQuestions: {},
+  dailyInfo: null,
+  playerThemeAssignments: {},
+  playerAgeCategory: {},
+  pos: 0,
+  score: 0,
+  jokers: defaultJokers(),
+  jokerResetKey: null,
+  currentQuestion: null,
+  currentTheme: null,
+  currentSquareType: null,
+  isPersonalQuestion: false,
+  eliminatedAnswers: [],
+  revealedAnswer: false,
+  showAmiPopup: false,
+  showThemePicker: false,
+  jokerUsedThisQuestion: false,
+  feedback: null
+};
+
+const CHILD_PREFIX = "🚸 ";
+function themesForAge(age){
+  return Object.keys(state.themeQuestions).filter(t=>
+    age === 'enfant' ? t.startsWith(CHILD_PREFIX) : !t.startsWith(CHILD_PREFIX)
+  );
+}
+function mapThemesForAge(themes, age){
+  return (themes||[]).map(t=>{
+    const isChildName = t.startsWith(CHILD_PREFIX);
+    if(age === 'enfant') return isChildName ? t : CHILD_PREFIX + t;
+    return isChildName ? t.slice(CHILD_PREFIX.length) : t;
+  }).filter(t=>state.themeQuestions[t]); // ne garde que les thèmes qui existent réellement
+}
+
+function withUsedFlag(questions){
+  return (questions||[]).map(q=>({...q, used:false}));
+}
+
+async function loadQuestionBank(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="card" style="text-align:center;">Chargement des questions...</div>
+  `;
+  try{
+    const resp = await fetch(QUESTIONS_URL, {cache:"no-store"});
+    if(!resp.ok) throw new Error("HTTP "+resp.status+" sur "+QUESTIONS_URL);
+    const data = await resp.json();
+
+    const themeQ = {};
+    Object.keys(data.themes||{}).forEach(name=>{
+      themeQ[name] = withUsedFlag(data.themes[name]);
+    });
+    const playerQ = {};
+    Object.keys(data.players||{}).forEach(name=>{
+      playerQ[name] = withUsedFlag(data.players[name]);
+    });
+
+    state.themeQuestions = themeQ;
+    state.playerQuestions = playerQ;
+    state.knownProfiles = data.knownProfiles || [];
+    state.dailyInfo = data.dailyInfo || null;
+    state.playerThemeAssignments = data.playerThemeAssignments || {};
+    state.playerAgeCategory = data.playerAgeCategory || {};
+    state.loadError = false;
+  }catch(err){
+    state.themeQuestions = Object.fromEntries(Object.keys(FALLBACK_THEME_QUESTIONS).map(k=>[k, withUsedFlag(FALLBACK_THEME_QUESTIONS[k])]));
+    state.playerQuestions = {};
+    state.knownProfiles = [];
+    state.dailyInfo = null;
+    state.playerThemeAssignments = {};
+    state.playerAgeCategory = {};
+    state.loadError = true;
+    state.loadErrorDetail = (err && err.message) ? err.message : String(err);
+  }
+}
+
+async function init(){
+  await loadQuestionBank();
+  const savedProfile = safeGet(DEVICE_PROFILE_KEY);
+  if(savedProfile){
+    restoreProfile(savedProfile);
+    state.screen = "home";
+  } else {
+    state.screen = "login";
+  }
+  render();
+}
+
+/* ---------- Login screen ---------- */
+function renderLogin(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="subtitle">Une expérience solo, adaptée à toi.</div>
+    ${state.loadError ? `<div class="hint" style="text-align:center;color:#c0392b;margin-bottom:10px;">⚠️ Connexion au fichier de questions impossible, questions de secours utilisées.<br><span style="font-size:0.65rem;opacity:0.8;">Détail : ${state.loadErrorDetail || 'inconnu'}</span></div>` : ''}
+
+    <div class="card">
+      <h2>👤 Qui joue ?</h2>
+      <label>Choisis ton profil</label>
+      <div class="profile-list" id="profile-list"></div>
+      <label style="margin-top:14px;">Ou entre un nouveau nom</label>
+      <input type="text" id="new-name" placeholder="Ton prénom">
+    </div>
+
+    <button class="btn btn-gold" id="start-game">Se connecter et jouer</button>
+  `;
+  renderProfileList();
+  document.getElementById('start-game').addEventListener('click', startGame);
+}
+
+function renderProfileList(){
+  const list = document.getElementById('profile-list');
+  list.innerHTML = state.knownProfiles.map(name=>`
+    <div class="profile-chip" data-name="${name}">${name}</div>
+  `).join('') || '<div class="hint">Aucun profil détecté, entre ton prénom ci-dessous.</div>';
+  list.querySelectorAll('.profile-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const name = chip.dataset.name;
+      const knownAge = state.playerAgeCategory[name];
+      if(knownAge){
+        // Catégorie d'âge déjà connue pour ce profil : on ne repose pas la question.
+        lockProfile(name, name, state.playerThemeAssignments[name] || null, knownAge);
+      } else {
+        state.pendingChipProfile = name;
+        state.pendingNewName = "";
+        state.screen = "select-age";
+        render();
+      }
+    });
+  });
+}
+
+function lockProfile(name, personalQuestionsKey, assignedThemes, ageCategory){
+  state.playerName = name;
+  state.personalQuestionsKey = personalQuestionsKey;
+  state.assignedThemes = assignedThemes;
+  state.ageCategory = ageCategory;
+  state.profileLocked = true;
+  state.pos = 0;
+  state.score = 0;
+  state.jokers = defaultJokers();
+  state.jokerResetKey = currentResetPeriodKey();
+  safeSet(DEVICE_PROFILE_KEY, name);
+  saveProgress();
+  state.screen = "home";
+  render();
+}
+
+function startGame(){
+  const newName = document.getElementById('new-name').value.trim();
+  if(!newName){
+    document.getElementById('new-name').focus();
+    return;
+  }
+  state.pendingNewName = newName;
+  state.pendingChipProfile = null;
+  state.selectedThemes = [];
+  state.screen = "select-age";
+  render();
+}
+
+/* ---------- Sélection de la catégorie d'âge (première connexion) ---------- */
+function renderSelectAge(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="subtitle">Une dernière question avant de commencer</div>
+    <div class="card" style="text-align:center;">
+      <h2 style="border:none;">Tu es plutôt...</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+        <button class="btn btn-gold" id="age-enfant">🚸 Enfant</button>
+        <button class="btn btn-outline" id="age-adulte" style="color:var(--ink-2);border-color:var(--ink-2);">Adulte</button>
+      </div>
+      <div class="hint" style="margin-top:10px;">Ce choix est définitif.</div>
+    </div>
+  `;
+  document.getElementById('age-enfant').addEventListener('click', ()=>chooseAge('enfant'));
+  document.getElementById('age-adulte').addEventListener('click', ()=>chooseAge('adulte'));
+}
+
+function chooseAge(age){
+  state.pendingAge = age;
+  if(state.pendingChipProfile){
+    const name = state.pendingChipProfile;
+    const base = state.playerThemeAssignments[name] || null;
+    const mapped = base ? mapThemesForAge(base, age) : null;
+    lockProfile(name, name, mapped, age);
+  } else {
+    state.selectedThemes = [];
+    state.screen = "select-themes";
+    render();
+  }
+}
+
+/* ---------- Sélection de 10 thèmes (profils créés manuellement) ---------- */
+function renderSelectThemes(){
+  const app = document.getElementById('app');
+  const allThemes = themesForAge(state.pendingAge);
+  const maxThemes = Math.min(40, allThemes.length);
+  const count = state.selectedThemes.length;
+  const valid = count >= 1 && count <= maxThemes;
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="subtitle">${state.pendingNewName}, choisis tes thèmes</div>
+    <div class="card">
+      <h2>Sélectionne entre 1 et ${maxThemes} thèmes</h2>
+      <div class="hint" style="margin-bottom:10px;">Ce choix est définitif : ${count}/${maxThemes} sélectionné(s)</div>
+      <div class="theme-grid" id="theme-select-grid">
+        ${allThemes.map(t=>`
+          <div class="theme-btn ${state.selectedThemes.includes(t)?'selected-theme':''}" data-theme="${t}">${t}</div>
+        `).join('')}
+      </div>
+    </div>
+    <button class="btn btn-gold" id="confirm-themes" ${!valid?'disabled':''}>Valider et jouer</button>
+  `;
+  app.querySelectorAll('.theme-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const t = btn.dataset.theme;
+      const idx = state.selectedThemes.indexOf(t);
+      if(idx>=0){
+        state.selectedThemes.splice(idx,1);
+      } else if(state.selectedThemes.length < maxThemes){
+        state.selectedThemes.push(t);
+      }
+      renderSelectThemes();
+    });
+  });
+  document.getElementById('confirm-themes').addEventListener('click', ()=>{
+    const c = state.selectedThemes.length;
+    if(c < 1 || c > maxThemes) return;
+    const uniqueName = `${state.pendingNewName}_1`;
+    lockProfile(uniqueName, NEW_PLAYER_SHEET, [...state.selectedThemes], state.pendingAge);
+  });
+}
+
+/* ---------- Page de garde (à chaque ouverture de l'app) ---------- */
+function dailyInfoHtml(){
+  const info = state.dailyInfo;
+  if(!info || (!info.text && !info.imageUrl && !info.audioUrl && !info.linkUrl)) return '';
+  return `
+    <div class="card daily-info">
+      <h2>📣 ${info.title || "Info du jour"}</h2>
+      ${info.text ? `<p style="margin:0 0 8px;">${info.text}</p>` : ''}
+      ${info.imageUrl ? `<img src="${info.imageUrl}" alt="">` : ''}
+      ${info.audioUrl ? `<audio controls src="${info.audioUrl}"></audio>` : ''}
+      ${info.linkUrl ? `<p style="margin-top:10px;"><a href="${info.linkUrl}" target="_blank" rel="noopener">${info.linkLabel || "En savoir plus"}</a></p>` : ''}
+    </div>
+  `;
+}
+
+function renderHome(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="card" style="text-align:center;">
+      <h2 style="border:none;margin:0;">Hello ${state.playerName} !</h2>
+    </div>
+    ${dailyInfoHtml()}
+    <button class="btn btn-gold" id="play-btn">Jouer</button>
+  `;
+  document.getElementById('play-btn').addEventListener('click', ()=>{
+    state.screen = "board";
+    render();
+  });
+}
+
+function squareTypeFor(index){
+  // Les 9 premières cases d'un cycle = thème fixe, la 10ème = thème sélectionné, puis ça recommence.
+  return (index % 10 === 0) ? 'free' : 'fixed';
+}
+
+function playerThemes(){
+  return state.assignedThemes || Object.keys(state.themeQuestions);
+}
+
+// Si un thème (ou le pot de questions personnelles) est entièrement épuisé,
+// on relance un nouveau cycle : toutes ses questions redeviennent disponibles.
+function resetPoolIfExhausted(pool){
+  if(pool && pool.length>0 && pool.every(q=>q.used)){
+    pool.forEach(q=>{ q.used = false; });
+  }
+}
+
+function availableThemeCount(theme){
+  const pool = state.themeQuestions[theme] || [];
+  resetPoolIfExhausted(pool);
+  return pool.filter(q=>!q.used).length;
+}
+function availablePersonalCount(){
+  const pool = state.playerQuestions[state.personalQuestionsKey] || [];
+  resetPoolIfExhausted(pool);
+  return pool.filter(q=>!q.used).length;
+}
+
+function renderBoard(){
+  const app = document.getElementById('app');
+  let squaresHtml = '';
+  const boardEnd = Math.max(TRACK_LENGTH, state.pos + 5);
+  for(let i=1;i<=boardEnd;i++){
+    const type = squareTypeFor(i);
+    squaresHtml += `<div class="square ${type} ${state.pos===i?'current':''}" data-pos="${i}">${i}${state.pos===i?'<span class="token">🚀</span>':''}</div>`;
+  }
+
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="subtitle">Connecté(e) en tant que <strong>${state.playerName}</strong></div>
+
+    <div class="card">
+      <h2>🏁 Ta progression</h2>
+      <div class="board-wrap" id="board-wrap"><div class="board">${squaresHtml}</div></div>
+      <div class="hint">🔵 thème fixe · 🟤 thème sélectionné</div>
+    </div>
+
+    <div class="stat-row">
+      <div class="card"><div class="num">${state.pos}</div><div class="lbl">case</div></div>
+      <div class="card"><div class="num">${state.score}</div><div class="lbl">points</div></div>
+    </div>
+
+    <div class="card" style="text-align:center;">
+      <button class="btn btn-gold" id="advance-btn">Avancer d'une case</button>
+    </div>
+  `;
+  document.getElementById('advance-btn').addEventListener('click', advance);
+  centerBoardOnCurrentSquare();
+}
+
+function centerBoardOnCurrentSquare(){
+  const wrap = document.getElementById('board-wrap');
+  if(!wrap) return;
+  const current = wrap.querySelector(`[data-pos="${state.pos}"]`) || wrap.querySelector('[data-pos="1"]');
+  if(!current) return;
+  const wrapBox = wrap.getBoundingClientRect();
+  const curBox = current.getBoundingClientRect();
+  const target = (curBox.left - wrapBox.left) + wrap.scrollLeft - (wrap.clientWidth/2) + (curBox.width/2);
+  wrap.scrollLeft = Math.max(0, target);
+}
+
+function advance(){
+  state.pos = state.pos + 1;
+  saveProgress();
+  const type = squareTypeFor(state.pos);
+  state.currentSquareType = type;
+  if(type === 'fixed'){
+    const themes = playerThemes().filter(t=>availableThemeCount(t)>0);
+    if(themes.length===0){ state.screen="empty"; render(); return; }
+    launchQuestion(themes[Math.floor(Math.random()*themes.length)], false);
+  } else {
+    state.screen = "choose-theme";
+    render();
+  }
+}
+
+function renderChooseTheme(){
+  const app = document.getElementById('app');
+  const themes = playerThemes();
+  app.innerHTML = `
+    <h1 class="title">Case "thème sélectionné"</h1>
+    <div class="subtitle">${state.playerName}, choisis ton thème</div>
+    <div class="card">
+      <div class="theme-grid">
+        ${themes.map(t=>`
+          <div class="theme-btn" data-theme="${t}" ${availableThemeCount(t)===0?'disabled':''}>${t}<span class="count">${availableThemeCount(t)} question(s)</span></div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  app.querySelectorAll('.theme-btn:not([disabled])').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.currentSquareType = 'free';
+      launchQuestion(btn.dataset.theme, false);
+    });
+  });
+}
+
+function resetQuestionUI(){
+  state.eliminatedAnswers = [];
+  state.revealedAnswer = false;
+  state.showAmiPopup = false;
+  state.showThemePicker = false;
+  state.jokerUsedThisQuestion = false;
+  state.feedback = null;
+}
+
+function launchQuestion(theme, isPersonal){
+  const pool = isPersonal ? (state.playerQuestions[theme]||[]) : (state.themeQuestions[theme]||[]);
+  resetPoolIfExhausted(pool);
+  const available = pool.filter(q=>!q.used);
+  if(available.length===0){ state.screen="empty"; render(); return; }
+  const q = available[Math.floor(Math.random()*available.length)];
+  state.currentQuestion = q;
+  state.currentTheme = theme;
+  state.isPersonalQuestion = isPersonal;
+  resetQuestionUI();
+  state.screen = "question";
+  render();
+}
+
+function renderQuestion(){
+  const app = document.getElementById('app');
+  const q = state.currentQuestion;
+  const answers = [["A",q.a],["B",q.b],["C",q.c],["D",q.d]];
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="subtitle">case ${state.pos} · ${state.score} pts</div>
+    <div class="question-box">
+      <span class="theme-tag ${state.isPersonalQuestion?'personal':''}">${state.isPersonalQuestion ? '⭐ Question personnelle' : state.currentTheme}</span>
+      <div class="question-text">${q.question}</div>
+      <div class="answers">
+        ${answers.map(([letter,text])=>`
+          <button class="answer-btn ${state.eliminatedAnswers.includes(letter)?'eliminated':''} ${state.revealedAnswer && letter===q.correct ?'revealed':''}" data-letter="${letter}" ${state.feedback?'disabled':''}>
+            <strong>${letter}.</strong> ${text}
+          </button>
+        `).join('')}
+      </div>
+      ${state.feedback ? `<div class="feedback ${state.feedback==='ok'?'ok':'bad'}">${state.feedback==='ok' ? '✅ Bonne réponse !' : '❌ Mauvaise réponse.'}</div>` : ''}
+      ${state.feedback && q.explication ? `<div class="explication-box">💡 ${q.explication}</div>` : ''}
+      <div class="jokers-divider"><span>Jokers</span></div>
+      <div class="jokers">
+        <button class="joker-btn" id="joker-bonneReponse" ${(!state.jokers.bonneReponse || state.feedback)?'disabled':''}>${JOKER_LABELS.bonneReponse}</button>
+        <button class="joker-btn" id="joker-fifty" ${(!state.jokers.fifty || state.feedback)?'disabled':''}>${JOKER_LABELS.fifty}</button>
+        <button class="joker-btn" id="joker-ami" ${(!state.jokers.ami || state.feedback)?'disabled':''}>${JOKER_LABELS.ami}</button>
+        <button class="joker-btn" id="joker-sacrifice10" ${(!state.jokers.sacrifice10 || state.feedback)?'disabled':''}>${JOKER_LABELS.sacrifice10}</button>
+        <button class="joker-btn" id="joker-sacrifice20" ${(!state.jokers.sacrifice20 || state.feedback)?'disabled':''}>${JOKER_LABELS.sacrifice20}</button>
+        <button class="joker-btn" id="joker-nouvelleQuestion" ${(!state.jokers.nouvelleQuestion || state.feedback)?'disabled':''}>${JOKER_LABELS.nouvelleQuestion}</button>
+        <button class="joker-btn" id="joker-nouveauTheme" ${(!state.jokers.nouveauTheme || state.feedback)?'disabled':''}>${JOKER_LABELS.nouveauTheme}</button>
+        <button class="joker-btn" id="joker-choisirTheme" ${(!state.jokers.choisirTheme || state.feedback)?'disabled':''}>${JOKER_LABELS.choisirTheme}</button>
+        <button class="joker-btn" id="joker-questionMoi" ${(!state.jokers.questionMoi || state.feedback)?'disabled':''}>${JOKER_LABELS.questionMoi}</button>
+      </div>
+    </div>
+    ${state.feedback ? '<button class="btn btn-gold" id="continue-btn">Continuer</button>' : ''}
+    ${state.showAmiPopup ? `
+      <div class="modal-overlay" id="ami-overlay">
+        <div class="modal-box">
+          <p>Vas-y ! Appelle un ami !</p>
+          <button class="btn btn-gold" id="ami-close">Fermer</button>
+        </div>
+      </div>
+    ` : ''}
+    ${state.showThemePicker ? `
+      <div class="modal-overlay" id="theme-picker-overlay">
+        <div class="modal-box" style="max-width:420px;">
+          <p>Choisis un thème</p>
+          <div class="theme-grid" id="theme-picker-grid" style="max-height:300px;overflow-y:auto;">
+            ${themesForAge(state.ageCategory).map(t=>`<div class="theme-btn" data-theme="${t}">${t}</div>`).join('')}
+          </div>
+          <button class="btn btn-outline" id="theme-picker-cancel" style="margin-top:14px;">Annuler</button>
+        </div>
+      </div>
+    ` : ''}
+  `;
+  if(!state.feedback){
+    app.querySelectorAll('.answer-btn').forEach(btn=> btn.addEventListener('click', ()=>submitAnswer(btn.dataset.letter)));
+    document.getElementById('joker-bonneReponse').addEventListener('click', useJokerBonneReponse);
+    document.getElementById('joker-fifty').addEventListener('click', useJokerFifty);
+    document.getElementById('joker-ami').addEventListener('click', useJokerAmi);
+    document.getElementById('joker-sacrifice10').addEventListener('click', ()=>useJokerSacrifice(10));
+    document.getElementById('joker-sacrifice20').addEventListener('click', ()=>useJokerSacrifice(20));
+    document.getElementById('joker-nouvelleQuestion').addEventListener('click', useJokerNouvelleQuestion);
+    document.getElementById('joker-nouveauTheme').addEventListener('click', useJokerNouveauTheme);
+    document.getElementById('joker-choisirTheme').addEventListener('click', ()=>{
+      state.showThemePicker = true;
+      renderQuestion();
+    });
+    document.getElementById('joker-questionMoi').addEventListener('click', useJokerQuestionMoi);
+  } else {
+    document.getElementById('continue-btn').addEventListener('click', afterQuestion);
+  }
+  const amiClose = document.getElementById('ami-close');
+  if(amiClose) amiClose.addEventListener('click', ()=>{ state.showAmiPopup = false; renderQuestion(); });
+  const themePickerOverlay = document.getElementById('theme-picker-overlay');
+  if(themePickerOverlay){
+    themePickerOverlay.querySelectorAll('.theme-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>useJokerChoisirTheme(btn.dataset.theme));
+    });
+    document.getElementById('theme-picker-cancel').addEventListener('click', ()=>{
+      state.showThemePicker = false;
+      renderQuestion();
+    });
+  }
+}
+
+function useJokerChoisirTheme(themeName){
+  resetPoolIfExhausted(state.themeQuestions[themeName]||[]);
+  const pool = (state.themeQuestions[themeName]||[]).filter(q=>!q.used);
+  if(pool.length===0){ state.showThemePicker=false; renderQuestion(); return; }
+  state.jokers.choisirTheme = false;
+  state.currentQuestion = pool[Math.floor(Math.random()*pool.length)];
+  state.currentTheme = themeName;
+  state.isPersonalQuestion = false;
+  resetQuestionUI();
+  state.jokerUsedThisQuestion = true;
+  saveProgress();
+  renderQuestion();
+}
+
+function useJokerQuestionMoi(){
+  const key = state.personalQuestionsKey;
+  resetPoolIfExhausted(state.playerQuestions[key]||[]);
+  const pool = (state.playerQuestions[key]||[]).filter(q=>!q.used);
+  if(pool.length===0) return; // pas de question personnelle disponible
+  state.jokers.questionMoi = false;
+  state.currentQuestion = pool[Math.floor(Math.random()*pool.length)];
+  state.currentTheme = key;
+  state.isPersonalQuestion = true;
+  resetQuestionUI();
+  state.jokerUsedThisQuestion = true;
+  saveProgress();
+  renderQuestion();
+}
+
+function useJokerBonneReponse(){
+  state.jokers.bonneReponse = false;
+  state.revealedAnswer = true;
+  state.jokerUsedThisQuestion = true;
+  saveProgress();
+  renderQuestion();
+}
+
+function useJokerFifty(){
+  const q = state.currentQuestion;
+  state.jokers.fifty = false;
+  const wrongLetters = ["A","B","C","D"].filter(l=>l!==q.correct);
+  state.eliminatedAnswers = wrongLetters.sort(()=>0.5-Math.random()).slice(0,2);
+  state.jokerUsedThisQuestion = true;
+  saveProgress();
+  renderQuestion();
+}
+
+function useJokerAmi(){
+  state.jokers.ami = false;
+  state.showAmiPopup = true;
+  state.jokerUsedThisQuestion = true;
+  saveProgress();
+  renderQuestion();
+}
+
+function useJokerSacrifice(amount){
+  const q = state.currentQuestion;
+  q.used = true;
+  state.jokers['sacrifice'+amount] = false;
+  state.pos = Math.max(1, state.pos - amount);
+  saveProgress();
+  state.screen = "board";
+  render();
+}
+
+function useJokerNouvelleQuestion(){
+  const poolKey = state.isPersonalQuestion ? state.personalQuestionsKey : state.currentTheme;
+  const pool = state.isPersonalQuestion ? (state.playerQuestions[poolKey]||[]) : (state.themeQuestions[poolKey]||[]);
+  const available = pool.filter(q=>!q.used && q!==state.currentQuestion);
+  if(available.length===0) return; // aucune autre question disponible dans ce thème
+  state.jokers.nouvelleQuestion = false;
+  state.currentQuestion = available[Math.floor(Math.random()*available.length)];
+  resetQuestionUI();
+  state.jokerUsedThisQuestion = true;
+  saveProgress();
+  renderQuestion();
+}
+
+function useJokerNouveauTheme(){
+  const themes = playerThemes().filter(t=>t!==state.currentTheme && availableThemeCount(t)>0);
+  if(themes.length===0) return; // aucun autre thème disponible
+  state.jokers.nouveauTheme = false;
+  const newTheme = themes[Math.floor(Math.random()*themes.length)];
+  const pool = state.themeQuestions[newTheme].filter(q=>!q.used);
+  state.currentQuestion = pool[Math.floor(Math.random()*pool.length)];
+  state.currentTheme = newTheme;
+  state.isPersonalQuestion = false;
+  resetQuestionUI();
+  state.jokerUsedThisQuestion = true;
+  saveProgress();
+  renderQuestion();
+}
+
+function pointsForAnswer(){
+  const withJoker = state.jokerUsedThisQuestion;
+  if(state.currentSquareType === 'free') return withJoker ? 2 : 3;
+  return withJoker ? 3 : 5;
+}
+
+function submitAnswer(letter){
+  const q = state.currentQuestion;
+  q.used = true;
+  const correct = letter === q.correct;
+  state.feedback = correct ? "ok" : "bad";
+  if(correct) state.score += pointsForAnswer();
+  saveProgress();
+  renderQuestion();
+}
+
+function afterQuestion(){
+  if(state.pos > 0 && state.pos % 10 === 0){
+    state.screen = "celebrate";
+  } else {
+    state.screen = "board";
+  }
+  render();
+}
+
+function renderCelebrate(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1 class="title">Le Jeu</h1>
+    <div class="card" style="text-align:center;">
+      <h2 style="border:none;">🎉 Bravo !</h2>
+      <p style="font-size:1.1rem;margin:10px 0;">Tu as atteint la case <strong>${state.pos}</strong><br>avec <strong>${state.score}</strong> points !</p>
+    </div>
+    <button class="btn btn-gold" id="celebrate-continue">Continuer</button>
+  `;
+  document.getElementById('celebrate-continue').addEventListener('click', ()=>{
+    state.screen = "board";
+    render();
+  });
+}
+
+function renderEmpty(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1 class="title">Plus de questions</h1>
+    <div class="card">
+      <div class="empty-state">Toutes les questions disponibles pour cette case ont déjà été utilisées.<br>Importe un fichier avec plus de questions pour continuer, ou reviens à ta progression.</div>
+      <button class="btn btn-outline" id="back-board" style="margin-top:12px;">Revenir à ma progression</button>
+    </div>
+  `;
+  document.getElementById('back-board').addEventListener('click', ()=>{ state.screen = "board"; render(); });
+}
+
+/* ---------- Router ---------- */
+function render(){
+  if(state.screen === "loading") return; // géré directement par loadQuestionBank()
+  if(state.screen === "login") renderLogin();
+  else if(state.screen === "select-age") renderSelectAge();
+  else if(state.screen === "select-themes") renderSelectThemes();
+  else if(state.screen === "home") renderHome();
+  else if(state.screen === "board") renderBoard();
+  else if(state.screen === "choose-theme") renderChooseTheme();
+  else if(state.screen === "question") renderQuestion();
+  else if(state.screen === "empty") renderEmpty();
+  else if(state.screen === "celebrate") renderCelebrate();
+}
+init();
+</script>
+</body>
+</html>
